@@ -1,0 +1,23 @@
+{
+  "20": {
+    "phase_margin_deg": 73.0475811511046,
+    "gain_margin_db": 9.545316780274568,
+    "overshoot_pct": 8.961698968446292,
+    "settling_time_s": 5.3885219512696505,
+    "max_elevator_deg": 21.64681536480449
+  },
+  "25": {
+    "phase_margin_deg": 75.91737394154745,
+    "gain_margin_db": 8.128732856843477,
+    "overshoot_pct": 9.62727731071988,
+    "settling_time_s": 4.258728403431577,
+    "max_elevator_deg": 11.342589406253488
+  },
+  "32": {
+    "phase_margin_deg": 78.81388322015277,
+    "gain_margin_db": 6.410242667733525,
+    "overshoot_pct": 8.636265495416371,
+    "settling_time_s": 3.0569242491192994,
+    "max_elevator_deg": 5.152157556924315
+  }
+}

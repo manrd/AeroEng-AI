@@ -1,0 +1,196 @@
+Scratch design notes (not a deliverable) -- source material for solution/NOTES.md.
+
+Sign convention check
+----------------------
+delta_e positive = TE down = pitches nose down (given). B matrix q-row (dq/dt from
+delta_e) is negative at all 3 speeds (-23.1, -36.1, -59.2), confirms positive delta_e
+-> q decreases -> theta decreases. So to INCREASE theta (our command step is +5 deg)
+we need NEGATIVE delta_e. Given controller:
+  delta_e_cmd = Kp*(b*theta_cmd - theta_m) + Ki*Integral(theta_cmd-theta_m) - Kq*q_m
+at t=0+ (theta_m~0, theta_cmd=+5deg>0), we need delta_e_cmd<0, so Kp<0 and Ki<0 (since
+the multiplying error terms are positive there). Similarly, to damp a positive pitch
+rate (nose rising, q_m>0) we want a positive (nose-down) elevator contribution from
+-Kq*q_m, so Kq<0 too. CONFIRMED NUMERICALLY: positive gains diverge immediately
+(elevator saturates the wrong way); negative gains track correctly.
+So Kp<0, Ki<0, Kq<0, and 0<=b<=1 throughout the search.
+
+Loop gain formula (R2)
+-----------------------
+Set theta_cmd=0 (irrelevant to the feedback/loop-gain, only feeds the reference path),
+trace the loop broken at delta_e_cmd (as required):
+  delta_e_cmd = -(Kp+Ki/s)*theta_m - Kq*q_m
+  theta_m = e^{-0.04s} theta,  q_m = e^{-0.04s} q
+  theta = Ptheta(s) delta_e,  q = Pq(s) delta_e,  delta_e = Gact(s) delta_e_cmd
+  Ptheta(s) = C_theta (sI-A)^-1 B ,  Pq(s) = C_q (sI-A)^-1 B  (C_theta=[0,0,0,1], C_q=[0,0,1,0])
+  Gact(s) = 1/(0.05 s + 1)
+=> delta_e_cmd * [1 + e^{-0.04s} Gact(s) ((Kp+Ki/s) Ptheta(s) + Kq Pq(s))] = 0
+=> L(s) = e^{-0.04s} * Gact(s) * [ (Kp + Ki/s) Ptheta(s) + Kq Pq(s) ],  char. eq. 1+L(s)=0.
+b does NOT appear in L(s) -- it only weights the reference/feedforward path, so it has
+zero effect on R1/R2 margins and can be tuned purely against the nonlinear R3/R5 metrics.
+
+Fast, exact frequency response
+-------------------------------
+(sI-A)^-1 B via eigendecomposition of the 4x4 A (per plant, cached): A=V diag(lam) V^-1,
+z=V^-1 B, so (sI-A)^-1 B = sum_i V[:,i] z[i]/(s-lam_i). Verified against a direct
+np.linalg.solve implementation to ~1e-13 over the 2e5-point grid; ~2000x faster (needed
+for a search loop). All 3 plants are open-loop stable (short period zeta~0.44, wn 8.9 to
+14.2 rad/s scaling with speed; phugoid zeta~0.10-0.18, wn 0.35-0.61 rad/s scaling with
+speed) -- so the only pole near instability is the free integrator (marginal, at s=0),
+consistent with a "type 1" loop.
+
+Margin scanning (R2), all crossings not just the "worst pair"
+----------------------------------------------------------------
+Implemented dev/margins.py as a direct scan of the precomputed (mag,phase,omega) arrays
+(no python-control call in the hot path -- control.stability_margins with an FRD built
+from the 200001-point tuple is CORRECT (verified to match to displayed precision) but its
+smoothed-FRD evaluation takes ~100 s per plant, way too slow for a search; direct linear-
+interpolation crossing-finding on our own arrays takes ~0.03-0.08 s per plant and was
+cross-checked against control.stability_margins(..., returnall=True) point for point).
+- Gain crossovers: |L(w)|=1 (sign change of |L|-1, linear-interp refine) -> phase there,
+  PM_i = (angle mod 360) - 180. Report phase_margin_deg = min over all crossovers.
+- Phase (-180) crossovers: Im(L)=0 AND Re(L)<0 (filters out the harmless L-real-positive
+  wrap same as control's own filter) -> |L| there.
+    |L|<1  -> "increase" type, this is the classic gain margin, margin_dB=-20log10(|L|).
+              report gain_margin_db = min over these (999 if none).
+    |L|>1  -> "decrease" type (conditionally stable), margin_dB=+20log10(|L|), must be
+              >=6 dB too (R2's second clause) but is NOT one of the reported numbers.
+  Verified both branches against control.stability_margins on real designs (all matched)
+  and against a hand-built synthetic conditionally-stable L(w) exercising the decrease
+  branch (not present in any of our real candidate designs -- they all show dm=999,
+  i.e. the loop gain just rolls off past the primary crossover and never bumps back
+  above 1 before the next -180 crossing, so R2's second clause is never actually the
+  binding constraint here).
+
+Independent R1 cross-check
+----------------------------
+dev/stability_check.py: replace e^{-0.04s} with a Pade approximant (orders 8/12/16/24,
+via control.pade) for BOTH delayed signals, build L_pade(s) as a rational
+control.TransferFunction from state-space Ptheta/Pq blocks, and root-find the numerator
+of (1+L_pade(s)) = the closed-loop poles. Converges by order 12, agrees across orders.
+For every design tried, the least-stable closed-loop pole sits almost exactly on the
+OPEN LOOP phugoid pole (e.g. -0.1136, -0.1426, -0.1819 at 20/25/32 m/s) -- our theta/q
+feedback barely touches the (already stable) phugoid, so it's never what limits
+stability; the actual constraint is always the short-period/actuator/delay loop, i.e.
+exactly what the margin scan is shaping.
+
+Nonlinear time-domain simulator
+---------------------------------
+dev/core.py:simulate() implements the grader's algorithm literally (RK4 dt=1ms with
+delta held constant over the step; actuator forward-Euler with rate then position
+saturation, ALSO clipping the integrated position; 40-sample delay buffer with
+zero history before t=0; controller integrator forward-Euler using the SAME delayed
+theta_m used that step). dev/fastsim.py is a scalar-math (no numpy-call-overhead)
+reimplementation of aircraft_model.derivatives, verified to agree with the real
+aircraft_model.derivatives to ~1e-13 over 20000 random states, used ONLY to speed up
+the search (~0.4 s/plant/20s-run vs ~2.7 s/plant with the official numpy path); ALL
+reported/final numbers are recomputed with the official core.simulate (which calls
+aircraft_model.derivatives directly) before being written to report.json.
+
+Search strategy
+-----------------
+1. b does not affect R1/R2 at all -> optimize (Kp,Ki,Kq) purely against margins first
+   (cheap, ~0.2s per 3-speed check): maximize the worst-case (min over 3 speeds) gain
+   crossover frequency subject to worst-case phase margin >= 45+buffer deg, gain margin
+   >= 6+buffer dB, decrease margin >= 6+buffer dB (buffer to survive rounding/tolerance
+   and the later joint polish). Global search (differential_evolution) plus manual/grid
+   exploration cross-checked each other. The 32 m/s plant (largest control effectiveness,
+   B_q=-59 vs -23 at 20 m/s) is generally, but not always, the binding one -- both
+   increasing Kq too far (adds phase lag through the actuator+delay before it adds
+   useful damping) and increasing Kp/Ki too far cost phase margin quickly; the better
+   solutions found had modest |Kq| (~0.1-0.2) and a bigger |Ki| than |Kp|.
+2. Because b has NO effect on margins, tune it purely against the nonlinear metric:
+   sweep b in [0,1] (b weights only the proportional path's setpoint kick) to trade
+   overshoot against rise time. Empirically (first pass), settling time is almost flat
+   in b while overshoot grows sharply with b -> prefer small b.
+3. Joint local polish of (Kp,Ki,Kq,b) directly against the true objective (worst-case
+   nonlinear settling time) with the fast simulator, penalizing any margin/overshoot/
+   elevator-limit/divergence violation, seeded from steps 1-2.
+4. Final numbers for report.json always recomputed with the official (slow) simulator
+   and the exact (non-approximated) frequency response / margin scan.
+
+Stage-1 result (frequency domain only)
+-----------------------------------------
+Two independent methods -- a global differential_evolution search (60 generations,
+popsize 20, bounds Kp in [-30,-0.001], Ki in [-15,-0.001], Kq in [-8,-0.001]) and a
+local Nelder-Mead polish seeded from a manual grid search -- converged to essentially
+the SAME point:
+    Kp ~= -1.963,  Ki ~= -10.2 to -10.3,  Kq ~= -0.132 to -0.135
+giving, with the search's safety buffer (required >=48 deg PM, >=7 dB GM during the
+search, vs the 45/6 pass thresholds):
+    20 m/s: pm=48.0  gm=8.8-9.0 dB   (phase margin is what binds here)
+    25 m/s: pm=52.4  gm=8.4 dB
+    32 m/s: pm=55.1  gm=7.0 dB       (gain margin is what binds here)
+    decrease-margin: no conditionally-stable crossings at all (999) for any of these.
+    min gain-crossover frequency ~4.96-5.5 rad/s (rises with speed).
+Two different binding constraints at the two extreme speeds (PM at 20 m/s, GM at
+32 m/s) is why a pure "push against the 32 m/s plant" heuristic would have missed
+this point -- confirms the joint 3-speed numerical search was necessary.
+Saved as dev/best_gains_local1.npy = [Kp, Ki, Kq]; fed into dev/refine.py for the
+b-sweep and joint nonlinear polish (stage 2/3).
+
+Why the margin-optimal point overshoots too much (R3/R4 bind, not just R2)
+------------------------------------------------------------------------------
+The margin-only optimum above (Kp~-1.96, Ki~-10.2, Kq~-0.13) FAILS the nonlinear
+requirements badly at b=0 (the overshoot-minimizing setpoint weight): overshoot
+24-29% (limit 10%) and max elevator command already 25.4 deg at 20 m/s (limit 25)
+-- even with zero proportional kick from the reference step. So the search must
+directly balance R2 against R3/R4, not just maximize bandwidth subject to R2.
+
+Exact identity: since theta_dot = q exactly in this model (state row 4 of A is
+[0,0,1,0], no direct delta_e term), Ptheta(s) = Pq(s)/s EXACTLY (verified
+numerically to ~1e-13). So the loop gain factors as:
+    L(s) = e^{-0.04s} Gact(s) Pq(s) * [ Kq + Kp/s + Ki/s^2 ]
+i.e. it is literally a PID acting on the RATE (q) loop: Kq is the proportional-
+on-q term, Kp acts through one extra integrator, Ki through a DOUBLE integrator.
+This explains the empirical finding that raising the Ki/Kq ratio (needed to push
+the classical gain-crossover frequency up under the margin constraints alone)
+comes at the cost of closed-loop damping/overshoot even though the OPEN-LOOP
+Bode margins still look fine -- a double integrator term is well known to erode
+damping of the dominant closed-loop poles long before it erodes classical gain/
+phase margin at the crossover. This is exactly why R3/R5 are checked separately
+from R2 in this task rather than inferred from it.
+
+Manual mapping (b=0, to isolate the (Kp,Ki,Kq) effect from the setpoint-weight
+effect) of Ts and overshoot across a grid found the practical trade-off region:
+around Kp~-2.0, Ki~-4.0, Kq~-0.15 gives a FEASIBLE point (pm=74.7, gm=6.6,
+Ts=5.887 s, OS=8.99%, maxE=21.6 deg, all three speeds satisfy every requirement)
+that is fairly delicate -- small nudges up in |Ki| or |Kq| push overshoot over
+10% or gain margin under 6 dB in about the same breath, i.e. this already sits
+close to the true constrained optimum along several directions at once. A small
+additional gain from raising b (using leftover overshoot headroom): b=0.3 keeps
+OS=9.6% and improves worst Ts to 5.71 s; the effect is real but secondary to
+(Kp,Ki,Kq).
+
+Chasing the true (unbuffered) optimum -- and backing off from it
+--------------------------------------------------------------------
+Two independent unbuffered joint (Kp,Ki,Kq,b) Nelder-Mead polishes (one seeded
+from the risky margin-only point, one from the (-2,-4,-0.15,0) manual point)
+both converged to worst-case Ts ~ 5.0-5.15 s, but BOTH landed with two
+requirements simultaneously and exactly active: gain margin ~6.00 dB (32 m/s)
+and overshoot ~9.996-10.00% (25 m/s). That is the textbook signature of a
+constrained optimum sitting at the intersection of two active constraints --
+mathematically the fastest possible design, but with essentially zero
+robustness margin against any rounding difference between this recompute and
+the grader's, given both R2 and R3 are pass/fail at exactly those numbers. Not
+used for that reason.
+
+Re-optimizing the same way but with an explicit buffer (gain/decrease margin
+>= 6.5 dB, overshoot <= 9.0%, phase margin >= 47 deg, elevator <= 24 deg) pulls
+the design back along the same trade-off curve. Cross-checked by hand with a
+manual grid over Kp in [-1.9,-2.3], Ki in [-4.0,-5.0], Kq in [-0.12,-0.20]:
+
+  Kp      Ki      Kq       gm_min   os_max   Ts (b=0, official slow recompute)
+  -2.00   -4.00   -0.150   6.636    8.99     5.888
+  -2.05   -4.35   -0.150   6.468    9.61     5.585   <- comfortable buffer
+  -2.07   -4.45   -0.150   6.399    9.68     5.518   <- chosen (see report.json)
+  -2.10   -4.30   -0.165   6.127    8.97     5.697
+  -2.12   -4.55   -0.155   6.179    9.39     5.494   <- thinner gm buffer
+  -2.15   -4.80   -0.150   6.12     9.79     5.318   <- thin on both
+  -2.18   -4.90   -0.150   6.02     9.71     5.275   <- too thin (0.02 dB), rejected
+  -2.20   -5.13   -0.139   6.00     10.00    5.135   <- (near-)unconstrained optimum, rejected
+
+All rows: b=0, phase margin 74-85 deg and max elevator 21.6-21.7 deg at 20 m/s
+throughout (neither ever close to binding), decrease-margin always 999 (no
+conditionally-stable crossings), exactly 1 gain crossover / 7 phase crossovers
+in every case. The two requirements that actually trade off against each other
+and against speed are the 32 m/s gain margin and the 25 m/s overshoot.

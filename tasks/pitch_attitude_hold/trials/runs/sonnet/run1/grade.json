@@ -1,0 +1,59 @@
+{
+  "verdict": "PASS",
+  "failed": [],
+  "checks": [
+    {
+      "check": "SCHEMA",
+      "passed": true,
+      "detail": "all fields present and finite"
+    },
+    {
+      "check": "STABILITY",
+      "passed": true,
+      "detail": "slowest closed loop pole real part -0.3435 1/s"
+    },
+    {
+      "check": "PHASE_MARGIN",
+      "passed": true,
+      "detail": "80.85 deg (needs at least 45)"
+    },
+    {
+      "check": "GAIN_MARGIN",
+      "passed": true,
+      "detail": "6.98 dB (needs at least 6)"
+    },
+    {
+      "check": "OVERSHOOT",
+      "passed": true,
+      "detail": "9.35% (at most 10%)"
+    },
+    {
+      "check": "POSITION_LIMIT",
+      "passed": true,
+      "detail": "peak absolute elevator command 11.79 deg (at most 25); beyond the stop for 0.000 s"
+    },
+    {
+      "check": "SETTLING",
+      "passed": true,
+      "detail": "3.609 s (at most 4.0 s; lower is better)"
+    },
+    {
+      "check": "CLAIMS",
+      "passed": true,
+      "detail": "every claim matches the recomputed value"
+    }
+  ],
+  "recomputed": {
+    "phase_margin_deg": 80.8483129027875,
+    "gain_margin_db": 6.982634659043693,
+    "gain_margin_decrease_db": Infinity,
+    "crossover_rad_s": [
+      5.9470317914449105
+    ],
+    "overshoot_pct": 9.350559778023646,
+    "settling_time_s": 3.609,
+    "max_elevator_deg": 11.794035354207226,
+    "rate_limited_s": 0.0,
+    "max_u_change_m_s": 2.4364117196447546
+  }
+}

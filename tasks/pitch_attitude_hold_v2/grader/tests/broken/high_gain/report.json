@@ -1,0 +1,23 @@
+{
+  "20": {
+    "phase_margin_deg": 73.755,
+    "gain_margin_db": 7.739,
+    "overshoot_pct": 6.98,
+    "settling_time_s": 5.416,
+    "max_elevator_deg": 21.65
+  },
+  "25": {
+    "phase_margin_deg": 76.946,
+    "gain_margin_db": 6.761,
+    "overshoot_pct": 7.66,
+    "settling_time_s": 4.153,
+    "max_elevator_deg": 11.31
+  },
+  "32": {
+    "phase_margin_deg": 79.172,
+    "gain_margin_db": 5.516,
+    "overshoot_pct": 6.47,
+    "settling_time_s": 2.11,
+    "max_elevator_deg": 5.04
+  }
+}

@@ -1,0 +1,3 @@
+# unstable_good_margins
+
+Found by an agent: the result of trial run 4's first search, which maximized the crossover frequency on the linear models under margin constraints only and ran to the edge of its search box (K_p = K_i = -4) with a positive rate gain. The margin sweep gives 90 to 152 deg of phase margin and 8.5 to 16.6 dB of gain margin, yet the loop is unstable at every airspeed, with two real poles in the right half plane (the fastest at +10.7, +14.3 and +18.4 1/s at 20, 25 and 32 m/s). Margins read from crossings assume a stable loop; only the pole check sees this. With full setpoint weight, as the run tried it, the nonlinear aircraft overshoots about 470% to 730%. The claims are honest: margins from the sweep, step results from the nonlinear aircraft.

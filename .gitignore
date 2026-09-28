@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# a local attempt at a task; the trial runs' solution folders are evidence and stay in
+tasks/*/solution/

@@ -1,0 +1,158 @@
+{
+  "verdict": "PASS",
+  "failed": [],
+  "checks": [
+    {
+      "check": "SCHEMA",
+      "passed": true,
+      "detail": "all fields present and finite"
+    },
+    {
+      "check": "STABILITY@20",
+      "passed": true,
+      "detail": "slowest linear closed loop pole real part -0.3272 1/s"
+    },
+    {
+      "check": "PHASE_MARGIN@20",
+      "passed": true,
+      "detail": "71.60 deg (needs at least 45)"
+    },
+    {
+      "check": "GAIN_MARGIN@20",
+      "passed": true,
+      "detail": "9.37 dB (needs at least 6)"
+    },
+    {
+      "check": "OVERSHOOT@20",
+      "passed": true,
+      "detail": "8.43% (at most 10%)"
+    },
+    {
+      "check": "POSITION_LIMIT@20",
+      "passed": true,
+      "detail": "peak absolute elevator command 21.65 deg (at most 25); beyond the stop for 0.000 s"
+    },
+    {
+      "check": "SETTLING@20",
+      "passed": true,
+      "detail": "5.678 s (at most 6.0 s)"
+    },
+    {
+      "check": "CLAIMS@20",
+      "passed": true,
+      "detail": "every claim matches the recomputed value"
+    },
+    {
+      "check": "STABILITY@25",
+      "passed": true,
+      "detail": "slowest linear closed loop pole real part -0.3380 1/s"
+    },
+    {
+      "check": "PHASE_MARGIN@25",
+      "passed": true,
+      "detail": "74.15 deg (needs at least 45)"
+    },
+    {
+      "check": "GAIN_MARGIN@25",
+      "passed": true,
+      "detail": "8.20 dB (needs at least 6)"
+    },
+    {
+      "check": "OVERSHOOT@25",
+      "passed": true,
+      "detail": "9.03% (at most 10%)"
+    },
+    {
+      "check": "POSITION_LIMIT@25",
+      "passed": true,
+      "detail": "peak absolute elevator command 11.18 deg (at most 25); beyond the stop for 0.000 s"
+    },
+    {
+      "check": "SETTLING@25",
+      "passed": true,
+      "detail": "4.454 s (at most 6.0 s)"
+    },
+    {
+      "check": "CLAIMS@25",
+      "passed": true,
+      "detail": "every claim matches the recomputed value"
+    },
+    {
+      "check": "STABILITY@32",
+      "passed": true,
+      "detail": "slowest linear closed loop pole real part -0.3894 1/s"
+    },
+    {
+      "check": "PHASE_MARGIN@32",
+      "passed": true,
+      "detail": "76.65 deg (needs at least 45)"
+    },
+    {
+      "check": "GAIN_MARGIN@32",
+      "passed": true,
+      "detail": "6.75 dB (needs at least 6)"
+    },
+    {
+      "check": "OVERSHOOT@32",
+      "passed": true,
+      "detail": "8.09% (at most 10%)"
+    },
+    {
+      "check": "POSITION_LIMIT@32",
+      "passed": true,
+      "detail": "peak absolute elevator command 4.97 deg (at most 25); beyond the stop for 0.000 s"
+    },
+    {
+      "check": "SETTLING@32",
+      "passed": true,
+      "detail": "3.176 s (at most 6.0 s)"
+    },
+    {
+      "check": "CLAIMS@32",
+      "passed": true,
+      "detail": "every claim matches the recomputed value"
+    }
+  ],
+  "recomputed": {
+    "20": {
+      "phase_margin_deg": 71.60250213317777,
+      "gain_margin_db": 9.368559214262351,
+      "gain_margin_decrease_db": Infinity,
+      "crossover_rad_s": [
+        3.427664589690272
+      ],
+      "overshoot_pct": 8.427563529194945,
+      "settling_time_s": 5.678,
+      "max_elevator_deg": 21.64600871609577,
+      "rate_limited_s": 0.0,
+      "min_airspeed_m_s": 17.6692575588242
+    },
+    "25": {
+      "phase_margin_deg": 74.15026518535232,
+      "gain_margin_db": 8.202463171775564,
+      "gain_margin_decrease_db": Infinity,
+      "crossover_rad_s": [
+        3.8357273003026484
+      ],
+      "overshoot_pct": 9.029432362178166,
+      "settling_time_s": 4.454,
+      "max_elevator_deg": 11.180779750809524,
+      "rate_limited_s": 0.0,
+      "min_airspeed_m_s": 22.57117790228176
+    },
+    "32": {
+      "phase_margin_deg": 76.64527166517256,
+      "gain_margin_db": 6.753703119768611,
+      "gain_margin_decrease_db": Infinity,
+      "crossover_rad_s": [
+        4.4754197113748635
+      ],
+      "overshoot_pct": 8.093005852125481,
+      "settling_time_s": 3.176,
+      "max_elevator_deg": 4.9686160537337845,
+      "rate_limited_s": 0.0,
+      "min_airspeed_m_s": 29.81756320738014
+    },
+    "worst_settling_time_s": 5.678
+  }
+}

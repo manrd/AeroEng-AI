@@ -1,0 +1,22 @@
+initial point: [-1.7501, -4.0329, -0.104, 0.0]
+    Va= 20 PM=  65.00 GM= 10.88 OS%=  11.67 elev= 21.05 settle= 5.40
+    Va= 25 PM=  67.41 GM=  9.60 OS%=  12.52 elev= 11.31 settle= 4.47
+    Va= 32 PM=  70.08 GM=  8.00 OS%=  11.58 elev=  5.03 settle= 3.63
+       message: Optimization terminated successfully.
+       success: True
+        status: 0
+           fun: 5.43848231984934
+             x: [-2.047e+00 -4.639e+00 -8.764e-02  1.826e-07]
+           nit: 233
+          nfev: 465
+ final_simplex: (array([[-2.047e+00, -4.639e+00, -8.764e-02,  1.826e-07],
+                       [-2.047e+00, -4.639e+00, -8.764e-02,  1.111e-07],
+                       ...,
+                       [-2.047e+00, -4.639e+00, -8.764e-02,  2.339e-07],
+                       [-2.047e+00, -4.639e+00, -8.764e-02,  2.528e-07]],
+                      shape=(5, 4)), array([ 5.438e+00,  5.438e+00,  5.438e+00,  5.438e+00,
+                        5.438e+00]))
+Final gains: Kp=-2.04656 Ki=-4.63893 Kq=-0.08764 b=0.00000
+    Va= 20 PM=  68.83 GM=  8.01 OS%=   8.44 elev= 21.65 settle= 5.43
+    Va= 25 PM=  71.06 GM=  7.30 OS%=   9.53 elev= 11.37 settle= 4.24
+    Va= 32 PM=  72.90 GM=  6.37 OS%=   8.09 elev=  5.01 settle= 2.15

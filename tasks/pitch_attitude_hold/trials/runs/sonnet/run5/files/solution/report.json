@@ -1,0 +1,7 @@
+{
+  "phase_margin_deg": 46.6,
+  "gain_margin_db": 6.4123,
+  "overshoot_pct": 9.3,
+  "settling_time_s": 3.536,
+  "max_elevator_deg": 12.3243
+}
